@@ -12,80 +12,35 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
         var balance = Root?.GetBalance() ?? 0;
         if (Math.Abs(balance) > 1) Balance(balance);
     }
-    public void Balance(int balance)
+    public void Balance(int balance, int oldBalance = 0, int count = 0)
     {
         if (balance > 1)
-            ShiftRight();
+            ShiftRootRight();
         else if (balance < 1)
-            ShiftLeft();
-        if (Math.Abs(balance) > 1) Balance(balance);
+            ShiftRootLeft();
+        var newBalance = Root!.GetBalance();
+        count = newBalance == oldBalance ? ++count : 0;
+        if (Math.Abs(newBalance) > 1 && count < 5) Balance(newBalance, balance, count);
+        else if (count >= 5 && Math.Abs(newBalance) > Math.Abs(balance)) Balance(newBalance, balance, count);
     }
 
-    private void ShiftRight()
+    private void ShiftRootLeft()
     {
-        var currentNode = Root.RightChild;
-        //if (currentNode.RightChild.LeftChild == null)
-        //{
-        //    currentNode.RightChild.LeftChild = currentNode;
-        //    Root = currentNode.RightChild;
-        //    currentNode.RightChild = null;
-        //}
-        //else
-        //{
-        //    currentNode = currentNode.RightChild;
-        //}
-        var notMovedYet = true;
-        while (notMovedYet)
-        {
-            if (currentNode.LeftChild == null)
-            {
-                var temp = Root;
-                currentNode.LeftChild = Root;
-
-                Root = temp.RightChild;
-                temp.RightChild = null;
-                notMovedYet = false;
-            }
-            else
-            {
-                currentNode = currentNode.LeftChild;
-            }
-        }
+        var willBeNewRoot = Root!.LeftChild;
+        Root.LeftChild = willBeNewRoot!.RightChild;
+        willBeNewRoot.RightChild = Root;
+        Root = willBeNewRoot;
     }
-    private void ShiftLeft()
+    private void ShiftRootRight()
     {
-        var currentNode = Root.LeftChild;
-        //if (currentNode.LeftChild.RightChild == null)
-        //{
-        //    currentNode.LeftChild.RightChild = currentNode;
-        //    Root = currentNode.LeftChild;
-        //    currentNode.LeftChild = null;
-        //}
-        //else
-        //{
-        //    currentNode = currentNode.LeftChild.RightChild;
-        //}
-        var notMovedYet = true;
-        while (notMovedYet)
-        {
-            if (currentNode.RightChild == null)
-            {
-                var temp = Root;
-                currentNode.RightChild = Root;
-
-                Root = temp.LeftChild;
-                temp.LeftChild = null;
-                notMovedYet = false;
-            }
-            else
-            {
-                currentNode = currentNode.RightChild;
-            }
-        }
+        var newRoot = Root!.RightChild;
+        Root.RightChild = newRoot!.LeftChild;
+        newRoot.LeftChild = Root;
+        Root = newRoot;
     }
 
     //TODO: remove before check-in, only for testing
-    internal int GetBalance() => Root.GetBalance();
+    internal int GetBalance() => Root?.GetBalance() ?? 0;
 
     public int Count() => _count;
 
@@ -94,8 +49,9 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
         var currentNode = Root;
         while (currentNode != null)
         {
-            if (currentNode.Data.CompareTo(value) == 0) return true;
-            else if (currentNode.Data.CompareTo(value) > 0)
+            var compareValue = currentNode.Data.CompareTo(value);
+            if (compareValue == 0) return true;
+            else if (compareValue > 0)
                 currentNode = currentNode.LeftChild;
             else currentNode = currentNode.RightChild;
         }
@@ -112,20 +68,22 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
             return;
         }
         var currentNode = Root;
-        while (true)
+        var nodeNotInserted = true;
+        while (nodeNotInserted)
         {
-            if (newNode.Data.CompareTo(currentNode!.Data) == 0)
+            var compareValue = newNode.Data.CompareTo(currentNode!.Data);
+            if (compareValue == 0)
             {
                 InsertSame(currentNode, newNode);
-                return;
+                nodeNotInserted = false;
             }
-            else if (newNode.Data.CompareTo(currentNode.Data) < 0)
+            else if (compareValue < 0)
             {
                 if (currentNode.LeftChild == null)
                 {
                     currentNode.LeftChild = newNode;
                     _count++;
-                    return;
+                    nodeNotInserted = false;
                 }
                 currentNode = currentNode.LeftChild;
             }
@@ -135,7 +93,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                 {
                     currentNode.RightChild = newNode;
                     _count++;
-                    return;
+                    nodeNotInserted = false;
                 }
                 currentNode = currentNode.RightChild;
             }
@@ -165,5 +123,51 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
     public void Remove(T value)
     {
         throw new NotImplementedException();
+    }
+    public void Print()
+    {
+        Queue<Node<T>?> nodes = new Queue<Node<T>?>();
+        Queue<Node<T>?> newNodes = new Queue<Node<T>?>();
+        nodes.Enqueue(Root);
+        int depth = 0;
+
+        bool exitCondition = false;
+        while (nodes.Count > 0 && !exitCondition)
+        {
+            depth++;
+            newNodes = new Queue<Node<T>?>();
+
+            string xs = "[";
+            foreach (var maybeNode in nodes)
+            {
+                string data = maybeNode == null ? " " : "" + maybeNode.Data;
+                if (maybeNode == null)
+                {
+                    xs += "_, ";
+                    newNodes.Enqueue(null);
+                    newNodes.Enqueue(null);
+                }
+                else
+                {
+                    Node<T> node = maybeNode;
+                    string s = node.Data.ToString();
+                    xs += s.Substring(0, Math.Min(4, s.Length)) + ", ";
+                    if (node.LeftChild != null) newNodes.Enqueue(node.LeftChild);
+                    else newNodes.Enqueue(null);
+                    if (node.RightChild != null) newNodes.Enqueue(node.RightChild);
+                    else newNodes.Enqueue(null);
+                }
+            }
+            xs = xs.Substring(0, xs.Length - 2) + "]";
+
+            Console.WriteLine(xs);
+
+            nodes = newNodes;
+            exitCondition = true;
+            foreach (var m in nodes)
+            {
+                if (m != null) exitCondition = false;
+            }
+        }
     }
 }
