@@ -6,37 +6,54 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
 {
     private Node<T>? Root = null;
     private int _count = 0;
-
+    private int _balance = 0;
+    public int balanceTimes = 0;
     public void Balance()
     {
         var balance = Root?.GetBalance() ?? 0;
-        if (Math.Abs(balance) > 1) Balance(balance);
+        if (Math.Abs(balance) > 1) Balance(Root,null,false,balance);
     }
-    public void Balance(int balance, int oldBalance = 0, int count = 0)
+    public void Balance(Node<T> nodeToBalance,Node<T> parent,bool isLeftChild,int balance, int oldBalance = 0, int count = 0)
     {
+        balanceTimes++;
         if (balance > 1)
-            ShiftRootRight();
+            ShiftRootRight(nodeToBalance,parent,isLeftChild);
         else if (balance < 1)
-            ShiftRootLeft();
-        var newBalance = Root!.GetBalance();
+            ShiftRootLeft(nodeToBalance,parent,isLeftChild);
+        //_balance = Root!.GetBalance();
+        var newBalance = nodeToBalance!.GetBalance();
         count = newBalance == oldBalance ? ++count : 0;
-        if (Math.Abs(newBalance) > 1 && count < 5) Balance(newBalance, balance, count);
-        else if (count >= 5 && Math.Abs(newBalance) > Math.Abs(balance)) Balance(newBalance, balance, count);
+        if (Math.Abs(newBalance) > 1 && count < 5) Balance(nodeToBalance, parent, isLeftChild,newBalance, balance, count);
+        if (count==5 && nodeToBalance==Root) RebalanceTree(Root);
+        //else if (count >= 5 && Math.Abs(newBalance) > Math.Abs(balance)) Balance(nodeToBalance, newBalance, balance, count);
+    }
+    public void RebalanceTree(Node<T> node,Node<T>parent = null!,bool isLeftChild=true)
+    {
+        if (node.LeftChild is not null) RebalanceTree(node.LeftChild,node,true);
+        if (node.RightChild is not null) RebalanceTree(node.RightChild,node,false);
+        var balance = node.GetBalance();
+        if (Math.Abs(balance) > 1) Balance(node,parent,isLeftChild, balance);
     }
 
-    private void ShiftRootLeft()
+    private void ShiftRootLeft(Node<T> node,Node<T> parent,bool isLeftChild)
     {
-        var willBeNewRoot = Root!.LeftChild;
-        Root.LeftChild = willBeNewRoot!.RightChild;
-        willBeNewRoot.RightChild = Root;
-        Root = willBeNewRoot;
+        var willBeNewRoot = node!.LeftChild;
+        node.LeftChild = willBeNewRoot!.RightChild;
+        willBeNewRoot.RightChild = node;
+        //node = willBeNewRoot;
+        if(parent is null)Root = willBeNewRoot;
+        else if(isLeftChild) parent.LeftChild = willBeNewRoot;
+        else parent.RightChild = willBeNewRoot;
     }
-    private void ShiftRootRight()
+    private void ShiftRootRight(Node<T> node, Node<T> parent, bool isLeftChild)
     {
-        var newRoot = Root!.RightChild;
-        Root.RightChild = newRoot!.LeftChild;
-        newRoot.LeftChild = Root;
-        Root = newRoot;
+        var newRoot = node!.RightChild;
+        node.RightChild = newRoot!.LeftChild;
+        newRoot.LeftChild = node;
+        //node = newRoot;
+        if (parent is null) Root = newRoot;
+        else if (isLeftChild) parent.LeftChild = newRoot;
+        else parent.RightChild = newRoot;
     }
 
     //TODO: remove before check-in, only for testing
@@ -74,7 +91,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
             var compareValue = newNode.Data.CompareTo(currentNode!.Data);
             if (compareValue == 0)
             {
-                InsertSame(currentNode, newNode);
+                //InsertSame(currentNode, newNode);
                 nodeNotInserted = false;
             }
             else if (compareValue < 0)
@@ -85,6 +102,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                     _count++;
                     nodeNotInserted = false;
                 }
+                if (currentNode == Root) _balance--;
                 currentNode = currentNode.LeftChild;
             }
             else
@@ -95,9 +113,12 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                     _count++;
                     nodeNotInserted = false;
                 }
+                if (currentNode == Root) _balance++;
                 currentNode = currentNode.RightChild;
             }
         }
+        var temp = Root.GetBalance();
+        if (Math.Abs(temp) >1) Balance(Root,null,false,temp);
     }
 
     private void InsertSame(Node<T> currentNode, Node<T> nodeToInsert)
