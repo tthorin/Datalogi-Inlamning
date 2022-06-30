@@ -27,4 +27,5 @@ public class Node<T>
         int right = (RightChild == null) ? level : RightChild.BalanceRecursion(level + 1);
         return left > right ? left : right;
     }
+    public int GetMaxDepth() => BalanceRecursion(1);
 }

@@ -4,48 +4,62 @@ using Datalogi_Inlamning.Interfaces;
 
 public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
 {
-    private Node<T>? Root = null;
+    //todo: change Root back to private
+    public Node<T>? Root = null;
     private int _count = 0;
     private int _balance = 0;
     public int balanceTimes = 0;
+    public bool rebalanced = false;
     public void Balance()
     {
         var balance = Root?.GetBalance() ?? 0;
-        if (Math.Abs(balance) > 1) Balance(Root,null,false,balance);
+        if (Math.Abs(balance) > 1) Balance(Root, null, false, balance);
     }
-    public void Balance(Node<T> nodeToBalance,Node<T> parent,bool isLeftChild,int balance, int oldBalance = 0, int count = 0)
+    public void Balance(Node<T> nodeToBalance, Node<T> parent, bool isLeftChild, int balance, int oldBalance = 0, int count = 0)
     {
         balanceTimes++;
         if (balance > 1)
-            ShiftRootRight(nodeToBalance,parent,isLeftChild);
+            nodeToBalance = ShiftRootRight(nodeToBalance, parent, isLeftChild);
         else if (balance < 1)
-            ShiftRootLeft(nodeToBalance,parent,isLeftChild);
+            nodeToBalance = ShiftRootLeft(nodeToBalance, parent, isLeftChild);
         //_balance = Root!.GetBalance();
         var newBalance = nodeToBalance!.GetBalance();
         count = newBalance == oldBalance ? ++count : 0;
-        if (Math.Abs(newBalance) > 1 && count < 5) Balance(nodeToBalance, parent, isLeftChild,newBalance, balance, count);
-        if (count==5 && nodeToBalance==Root) RebalanceTree(Root);
+        if (Math.Abs(newBalance) > 1 && count < 5) Balance(nodeToBalance, parent, isLeftChild, newBalance, balance, count);
+        Console.WriteLine(Math.Ceiling(Math.Log2(_count)) +" "+ Root.GetMaxDepth());
+        if ((count == 5 && nodeToBalance == Root) || (Math.Ceiling(Math.Log2(_count)+2))<Root.GetMaxDepth()) RebalanceTree(Root);
         //else if (count >= 5 && Math.Abs(newBalance) > Math.Abs(balance)) Balance(nodeToBalance, newBalance, balance, count);
     }
-    public void RebalanceTree(Node<T> node,Node<T>parent = null!,bool isLeftChild=true)
+    public void RebalanceTree(Node<T> node, Node<T> parent = null!, bool isLeftChild = true)
     {
-        if (node.LeftChild is not null) RebalanceTree(node.LeftChild,node,true);
-        if (node.RightChild is not null) RebalanceTree(node.RightChild,node,false);
-        var balance = node.GetBalance();
-        if (Math.Abs(balance) > 1) Balance(node,parent,isLeftChild, balance);
+        if (!rebalanced) rebalanced = true;
+        if (node.LeftChild is not null)
+        {
+            RebalanceTree(node.LeftChild, node, true);
+            var balance = node.LeftChild.GetBalance();
+            if (Math.Abs(balance) > 1) Balance(node.LeftChild, node, isLeftChild, balance);
+        }
+
+        if (node.RightChild is not null)
+        {
+            RebalanceTree(node.RightChild, node, false);
+            var balance = node.RightChild.GetBalance();
+            if (Math.Abs(balance) > 1) Balance(node.RightChild, node, isLeftChild, balance);
+        }
     }
 
-    private void ShiftRootLeft(Node<T> node,Node<T> parent,bool isLeftChild)
+    private Node<T> ShiftRootLeft(Node<T> node, Node<T> parent, bool isLeftChild)
     {
         var willBeNewRoot = node!.LeftChild;
         node.LeftChild = willBeNewRoot!.RightChild;
         willBeNewRoot.RightChild = node;
         //node = willBeNewRoot;
-        if(parent is null)Root = willBeNewRoot;
-        else if(isLeftChild) parent.LeftChild = willBeNewRoot;
+        if (parent is null) Root = willBeNewRoot;
+        else if (isLeftChild) parent.LeftChild = willBeNewRoot;
         else parent.RightChild = willBeNewRoot;
+        return willBeNewRoot;
     }
-    private void ShiftRootRight(Node<T> node, Node<T> parent, bool isLeftChild)
+    private Node<T> ShiftRootRight(Node<T> node, Node<T> parent, bool isLeftChild)
     {
         var newRoot = node!.RightChild;
         node.RightChild = newRoot!.LeftChild;
@@ -54,6 +68,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
         if (parent is null) Root = newRoot;
         else if (isLeftChild) parent.LeftChild = newRoot;
         else parent.RightChild = newRoot;
+        return newRoot;
     }
 
     //TODO: remove before check-in, only for testing
@@ -117,8 +132,9 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                 currentNode = currentNode.RightChild;
             }
         }
+        if((Math.Ceiling(Math.Log2(_count) + 1)) < Root.GetMaxDepth()) RebalanceTree(Root);
         var temp = Root.GetBalance();
-        if (Math.Abs(temp) >1) Balance(Root,null,false,temp);
+        if (Math.Abs(temp) > 1) Balance(Root, null, false, temp);
     }
 
     private void InsertSame(Node<T> currentNode, Node<T> nodeToInsert)
