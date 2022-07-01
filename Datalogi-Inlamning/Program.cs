@@ -3,17 +3,15 @@
 BinarySearchTree<int> myTree = new();
 static void TestBalance(BinarySearchTree<int> myTree)
 {
-    const int SAMPLE_SIZE = 20;
-    const int RANDOM_MAX = 100;
-    var sample = new int[SAMPLE_SIZE];
+    const int SAMPLE_SIZE = 700000;
+    const int RANDOM_MAX = 1000000;
+    //var sample = new int[SAMPLE_SIZE];
     var rng = new Random();
     for (int i = 0; i < SAMPLE_SIZE; i++)
     {
-        sample[i] = rng.Next(1, RANDOM_MAX + 1);
-    }
-    foreach (var num in sample)
-    {
+        var num = rng.Next(1, RANDOM_MAX + 1);
         myTree.Insert(num);
+        //myTree.Insert(i+1);
     }
     //myTree.Insert(1);
     //myTree.Insert(2);
@@ -28,7 +26,6 @@ static void TestBalance(BinarySearchTree<int> myTree)
     //myTree.Balance();
     //Console.WriteLine("balance after Balance(): " + myTree.GetBalance());
     Console.WriteLine("Done, balanced "+myTree.balanceTimes + " times.");
-    Console.WriteLine("rebalanced: " + myTree.rebalanced);
     Console.WriteLine("max depth: " + myTree.Root.GetMaxDepth());
 }
 static void TestGetBalance(BinarySearchTree<int> tree)
@@ -45,4 +42,4 @@ static void TestGetBalance(BinarySearchTree<int> tree)
 }
 //TestGetBalance(myTree);
 TestBalance(myTree);
-myTree.Print();
+//myTree.Print();

@@ -6,69 +6,40 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
 {
     //todo: change Root back to private
     public Node<T>? Root = null;
+
     private int _count = 0;
-    private int _balance = 0;
+    //todo: remove balanceTimes
     public int balanceTimes = 0;
-    public bool rebalanced = false;
+    private int _leftDepth = 0;
+    private int _rightDepth = 0;
     public void Balance()
     {
-        var balance = Root?.GetBalance() ?? 0;
-        if (Math.Abs(balance) > 1) Balance(Root, null, false, balance);
-    }
-    public void Balance(Node<T> nodeToBalance, Node<T> parent, bool isLeftChild, int balance, int oldBalance = 0, int count = 0)
-    {
+        if (Root is null) return;
         balanceTimes++;
-        if (balance > 1)
-            nodeToBalance = ShiftRootRight(nodeToBalance, parent, isLeftChild);
-        else if (balance < 1)
-            nodeToBalance = ShiftRootLeft(nodeToBalance, parent, isLeftChild);
-        //_balance = Root!.GetBalance();
-        var newBalance = nodeToBalance!.GetBalance();
-        count = newBalance == oldBalance ? ++count : 0;
-        if (Math.Abs(newBalance) > 1 && count < 5) Balance(nodeToBalance, parent, isLeftChild, newBalance, balance, count);
-        Console.WriteLine(Math.Ceiling(Math.Log2(_count)) +" "+ Root.GetMaxDepth());
-        if ((count == 5 && nodeToBalance == Root) || (Math.Ceiling(Math.Log2(_count)+2))<Root.GetMaxDepth()) RebalanceTree(Root);
-        //else if (count >= 5 && Math.Abs(newBalance) > Math.Abs(balance)) Balance(nodeToBalance, newBalance, balance, count);
+        List<Node<T>> nodes = new();
+        StoreTree(Root, nodes);
+        Root = RebuildTree(nodes, 0, nodes.Count - 1);
+        var depth = Root!.GetMaxDepth();
+        _leftDepth = depth;
+        _rightDepth = depth;
     }
-    public void RebalanceTree(Node<T> node, Node<T> parent = null!, bool isLeftChild = true)
+    private void StoreTree(Node<T> node, List<Node<T>> nodes)
     {
-        if (!rebalanced) rebalanced = true;
-        if (node.LeftChild is not null)
-        {
-            RebalanceTree(node.LeftChild, node, true);
-            var balance = node.LeftChild.GetBalance();
-            if (Math.Abs(balance) > 1) Balance(node.LeftChild, node, isLeftChild, balance);
-        }
+        if (node is null) return;
+        StoreTree(node.LeftChild!, nodes);
+        nodes.Add(node);
+        StoreTree(node.RightChild!, nodes);
+    }
+    private Node<T>? RebuildTree(List<Node<T>> nodes, int start, int end)
+    {
+        if (start > end) return null;
+        var mid = (start + end) / 2;
 
-        if (node.RightChild is not null)
-        {
-            RebalanceTree(node.RightChild, node, false);
-            var balance = node.RightChild.GetBalance();
-            if (Math.Abs(balance) > 1) Balance(node.RightChild, node, isLeftChild, balance);
-        }
-    }
+        var node = nodes[mid];
+        node.LeftChild = RebuildTree(nodes, start, mid - 1);
+        node.RightChild = RebuildTree(nodes, mid + 1, end);
 
-    private Node<T> ShiftRootLeft(Node<T> node, Node<T> parent, bool isLeftChild)
-    {
-        var willBeNewRoot = node!.LeftChild;
-        node.LeftChild = willBeNewRoot!.RightChild;
-        willBeNewRoot.RightChild = node;
-        //node = willBeNewRoot;
-        if (parent is null) Root = willBeNewRoot;
-        else if (isLeftChild) parent.LeftChild = willBeNewRoot;
-        else parent.RightChild = willBeNewRoot;
-        return willBeNewRoot;
-    }
-    private Node<T> ShiftRootRight(Node<T> node, Node<T> parent, bool isLeftChild)
-    {
-        var newRoot = node!.RightChild;
-        node.RightChild = newRoot!.LeftChild;
-        newRoot.LeftChild = node;
-        //node = newRoot;
-        if (parent is null) Root = newRoot;
-        else if (isLeftChild) parent.LeftChild = newRoot;
-        else parent.RightChild = newRoot;
-        return newRoot;
+        return node;
     }
 
     //TODO: remove before check-in, only for testing
@@ -100,24 +71,27 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
             return;
         }
         var currentNode = Root;
+        var depth = 0;
         var nodeNotInserted = true;
+        bool onLeftSide = false;
         while (nodeNotInserted)
         {
+            depth++;
             var compareValue = newNode.Data.CompareTo(currentNode!.Data);
             if (compareValue == 0)
             {
-                //InsertSame(currentNode, newNode);
                 nodeNotInserted = false;
             }
             else if (compareValue < 0)
             {
+                if (currentNode == Root) onLeftSide = true;
                 if (currentNode.LeftChild == null)
                 {
                     currentNode.LeftChild = newNode;
                     _count++;
                     nodeNotInserted = false;
+                    if (depth > _leftDepth && onLeftSide) _leftDepth = depth;
                 }
-                if (currentNode == Root) _balance--;
                 currentNode = currentNode.LeftChild;
             }
             else
@@ -127,34 +101,21 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                     currentNode.RightChild = newNode;
                     _count++;
                     nodeNotInserted = false;
+                    if (depth > _rightDepth && !onLeftSide) _rightDepth = depth;
                 }
-                if (currentNode == Root) _balance++;
                 currentNode = currentNode.RightChild;
             }
         }
-        if((Math.Ceiling(Math.Log2(_count) + 1)) < Root.GetMaxDepth()) RebalanceTree(Root);
-        var temp = Root.GetBalance();
-        if (Math.Abs(temp) > 1) Balance(Root, null, false, temp);
-    }
 
-    private void InsertSame(Node<T> currentNode, Node<T> nodeToInsert)
-    {
-        if (currentNode.LeftChild is null)
+        var maxWantedDepth = Math.Ceiling(Math.Log2(_count) + 3);
+        if (maxWantedDepth > 10) maxWantedDepth -= maxWantedDepth / 10;
+        var biggestDepth = _rightDepth > _leftDepth ? _rightDepth : _leftDepth;
+        var balance = _rightDepth - _leftDepth;
+        if (_count > 13)
         {
-            currentNode.LeftChild = nodeToInsert;
-            _count++;
+            Root = Root;
         }
-        else if (currentNode.RightChild is null)
-        {
-            currentNode.RightChild = nodeToInsert;
-            _count++;
-        }
-        else
-        {
-            var balance = currentNode.GetBalance();
-            if (balance > 0) InsertSame(currentNode.LeftChild, nodeToInsert);
-            else InsertSame(currentNode.RightChild, nodeToInsert);
-        }
+        if (Math.Abs(balance) > 1 || biggestDepth > maxWantedDepth) Balance();
     }
 
     public void Remove(T value)
@@ -180,6 +141,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                 string data = maybeNode == null ? " " : "" + maybeNode.Data;
                 if (maybeNode == null)
                 {
+#pragma warning disable S1643 // Strings should not be concatenated using '+' in a loop
                     xs += "_, ";
                     newNodes.Enqueue(null);
                     newNodes.Enqueue(null);
@@ -189,6 +151,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                     Node<T> node = maybeNode;
                     string s = node.Data.ToString();
                     xs += s.Substring(0, Math.Min(4, s.Length)) + ", ";
+#pragma warning restore S1643 // Strings should not be concatenated using '+' in a loop
                     if (node.LeftChild != null) newNodes.Enqueue(node.LeftChild);
                     else newNodes.Enqueue(null);
                     if (node.RightChild != null) newNodes.Enqueue(node.RightChild);
