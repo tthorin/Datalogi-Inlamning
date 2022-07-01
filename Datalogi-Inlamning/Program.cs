@@ -23,7 +23,7 @@ static void TestBalance(BinarySearchTree<int> myTree)
     Console.WriteLine("Done, balanced "+myTree.balanceTimes + " times during insert.");
     Console.WriteLine("balance after insert complete: " + myTree.GetBalance());
     Console.WriteLine("count: " + myTree.Count());
-    Console.WriteLine("max depth after insert: " + myTree.Root.GetMaxDepth());
+    Console.WriteLine("max depth after insert: " + myTree.Root!.GetMaxDepth());
     myTree.Balance();
     Console.WriteLine("\nBalance again after insert complete, balance is now: " + myTree.GetBalance());
     Console.WriteLine("Max depth: " + myTree.Root.GetMaxDepth());
@@ -57,7 +57,7 @@ static void TestRemove(BinarySearchTree<int> tree)
 
     tree.Print();
 
-    tree.Remove(65);
+    tree.Remove(30);
 
     tree.Print();
 }
