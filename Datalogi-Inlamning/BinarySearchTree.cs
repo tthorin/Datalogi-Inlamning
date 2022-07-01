@@ -19,7 +19,7 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
         List<Node<T>> nodes = new();
         StoreTree(Root, nodes);
         Root = RebuildTree(nodes, 0, nodes.Count - 1);
-        var depth = Root!.GetMaxDepth();
+        var depth = (int)Math.Ceiling(Math.Log2(_count)); ;
         _leftDepth = depth;
         _rightDepth = depth;
     }
