@@ -40,6 +40,28 @@ static void TestGetBalance(BinarySearchTree<int> tree)
 
     Console.WriteLine("Balance for tree is: "+tree.GetBalance());
 }
+static void TestRemove(BinarySearchTree<int> tree)
+{
+    //tree.Insert(13);
+    //tree.Insert(12);
+    //tree.Insert(11);
+    //tree.Insert(10);
+
+    tree.Insert(50);
+    tree.Insert(30);
+    tree.Insert(80);
+    tree.Insert(20);
+    tree.Insert(40);
+    tree.Insert(65);
+    tree.Insert(62);
+
+    tree.Print();
+
+    tree.Remove(65);
+
+    tree.Print();
+}
 //TestGetBalance(myTree);
-TestBalance(myTree);
+//TestBalance(myTree);
 //myTree.Print();
+TestRemove(myTree);

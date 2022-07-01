@@ -130,15 +130,14 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                 RemoveUtil(currentNode, parentNode);
                 return;
             }
+            parentNode = currentNode!;
             if (compareValue < 0) currentNode = currentNode.LeftChild;
             else currentNode = currentNode.RightChild;
-
-            parentNode = currentNode!;
         }
     }
     private void RemoveUtil(Node<T> nodeToRemove, Node<T> parentNode)
     {
-        if (parentNode is null && _leftDepth > _rightDepth)
+        if (parentNode is null)
         {
             if (nodeToRemove.LeftChild is not null) Root = nodeToRemove.LeftChild;
             else if (nodeToRemove.RightChild is not null)
@@ -158,6 +157,49 @@ public class BinarySearchTree<T> : IBstG<T>, IBstVg<T> where T : IComparable<T>
                 }
             }
         }
+        else if (nodeToRemove == parentNode.LeftChild)
+        {
+            if (nodeToRemove.LeftChild is not null) parentNode.LeftChild = nodeToRemove.LeftChild;
+            else if (nodeToRemove.RightChild is not null)
+            {
+                parentNode.LeftChild = nodeToRemove.RightChild;
+                return;
+            }
+            else parentNode.LeftChild = null;
+
+            if (nodeToRemove.RightChild is not null)
+            {
+                if (parentNode.LeftChild.RightChild is null) parentNode.LeftChild.RightChild = nodeToRemove.RightChild;
+                else
+                {
+                    var currentNode = parentNode.LeftChild.RightChild;
+                    while (currentNode.RightChild is not null) currentNode = currentNode.RightChild;
+                    currentNode.RightChild = nodeToRemove.RightChild;
+                }
+            }
+        }
+        else
+        {
+            if (nodeToRemove.LeftChild is not null) parentNode.RightChild = nodeToRemove.LeftChild;
+            else if (nodeToRemove.RightChild is not null)
+            {
+                parentNode.RightChild = nodeToRemove.RightChild;
+                return;
+            }
+            else parentNode.RightChild = null;
+
+            if (nodeToRemove.RightChild is not null)
+            {
+                if (parentNode.RightChild.RightChild is null) parentNode.RightChild.RightChild = nodeToRemove.RightChild;
+                else
+                {
+                    var currentNode = parentNode.RightChild.RightChild;
+                    while (currentNode.RightChild is not null) currentNode = currentNode.RightChild;
+                    currentNode.RightChild = nodeToRemove.RightChild;
+                }
+            }
+        }
+        Balance();
     }
     public void Print()
     {
